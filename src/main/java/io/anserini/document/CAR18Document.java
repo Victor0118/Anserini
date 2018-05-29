@@ -23,12 +23,12 @@ import java.io.IOException;
  * A CAR dataset paragraph. The para_id serves as the id.
  */
 public class CAR18Document implements SourceDocument {
-  private final String title;
-  private final String contents;
+  private final String paraID;
+  private final String paragraph;
 
-  public CAR18Document(String title, String contents) {
-    this.title = title;
-    this.contents = contents;
+  public CAR18Document(String paraID, String paragraph) {
+    this.paraID = paraID;
+    this.paragraph = paragraph;
 
   }
 
@@ -39,12 +39,12 @@ public class CAR18Document implements SourceDocument {
 
   @Override
   public String id() {
-    return title;
+    return paraID;
   }
 
   @Override
   public String content() {
-    return contents;
+    return paragraph;
   }
 
   @Override
