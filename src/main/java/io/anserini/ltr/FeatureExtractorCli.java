@@ -84,7 +84,7 @@ public class FeatureExtractorCli {
       String className = parsedArgs.collection.equals("gov2") ? "Trec" : "Webxml";
       TopicReader tr = (TopicReader)Class.forName("io.anserini.search.query."+className+"TopicReader")
               .getConstructor(Path.class).newInstance(Paths.get(parsedArgs.topicsFile));
-      SortedMap<Integer, Map<String, String>> topics = tr.read();
+      SortedMap<String, Map<String, String>> topics = tr.read();
       LOG.debug(String.format("%d topics found", topics.size()));
 
       WebFeatureExtractor extractor = new WebFeatureExtractor(reader, qrels, topics, extractors);
@@ -93,7 +93,7 @@ public class FeatureExtractorCli {
       String className = parsedArgs.collection.equals("gov2") ? "Trec" : "Webxml";
       TopicReader tr = (TopicReader)Class.forName("io.anserini.search.query.MicroblogTopicReader")
           .getConstructor(Path.class).newInstance(Paths.get(parsedArgs.topicsFile));
-      SortedMap<Integer, Map<String, String>> topics = tr.read();
+      SortedMap<String, Map<String, String>> topics = tr.read();
       LOG.debug(String.format("%d topics found", topics.size()));
       TwitterFeatureExtractor extractor = new TwitterFeatureExtractor(reader, qrels, topics, extractors);
       extractor.printFeatures(out);

@@ -43,18 +43,12 @@ public class WebxmlTopicReader extends TopicReader {
 
   /**
    * Read topics of TREC Web Tracks from 2009 to 2014 including:
-   * topics.web.1-50.txt
-   * topics.web.51-100.txt
-   * topics.web.101-150.txt
-   * topics.web.151-200.txt
-   * topics.web.201-250.txt
-   * topics.web.251-300.txt
    * @return SortedMap where keys are query/topic IDs and values are title portions of the topics
    * @throws IOException
    */
   @Override
-  public SortedMap<Integer, Map<String, String>> read(BufferedReader bRdr) throws IOException {
-    SortedMap<Integer, Map<String, String>> map = new TreeMap<>();
+  public SortedMap<String, Map<String, String>> read(BufferedReader bRdr) throws IOException {
+    SortedMap<String, Map<String, String>> map = new TreeMap<>();
     Map<String,String> fields = new HashMap<>();
 
     String number = "";
@@ -72,7 +66,7 @@ public class WebxmlTopicReader extends TopicReader {
         fields.put("title", query);
       }
       if (line.startsWith("</topic>")) {
-        map.put(Integer.parseInt(number), fields);
+        map.put(String.valueOf(Integer.valueOf(number)), fields);
       }
     }
 
