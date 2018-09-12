@@ -51,7 +51,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -81,6 +80,7 @@ public final class IndexCollection {
     public String generatorClass;
 
     // optional arguments
+
     @Option(name = "-storePositions", usage = "boolean switch to index storePositions")
     public boolean storePositions = false;
 
@@ -112,13 +112,17 @@ public final class IndexCollection {
 
     @Option(name = "-tweet.keepRetweets", usage = "boolean switch to keep retweets while indexing")
     public boolean tweetKeepRetweets = false;
+
     @Option(name = "-tweet.keepUrls", usage = "boolean switch to keep URLs while indexing tweets")
     public boolean tweetKeepUrls = false;
+
     @Option(name = "-tweet.stemming", usage = "boolean switch to apply Porter stemming while indexing tweets")
     public boolean tweetStemming = false;
+
     @Option(name = "-tweet.maxId", usage = "the max tweet Id for indexing. Tweet Ids that are larger " +
         " (when being parsed to Long type) than this value will NOT be indexed")
     public long tweetMaxId = Long.MAX_VALUE;
+
     @Option(name = "-tweet.deletedIdsFile", metaVar = "[Path]",
         usage = "a file that contains deleted tweetIds, one per line. these tweeets won't be indexed")
     public String tweetDeletedIdsFile = "";
@@ -188,28 +192,14 @@ public final class IndexCollection {
         BaseFileSegment<SourceDocument> iter =
             (BaseFileSegment) ((SegmentProvider) collection).createFileSegment(inputFile);
 
-        while (true) {
-          boolean hasNext = false;
+        while (iter.hasNext()) {
+          SourceDocument d;
           try {
-            hasNext = iter.hasNext();
-          } catch (NoSuchElementException e1) {
-            break;
-          } catch (RuntimeException e2) {
-            if (e2.getMessage().contains("IOException")) {
-              LOG.warn("Exception when parsing document: ", e2);
-              counters.errors.incrementAndGet();
-              break; // IOException: stop reading more documents
-            } else {
-              counters.skipped.incrementAndGet();
-              continue; // Non-IOException: continue reading the next document
-            }
+            d = iter.next();
+          } catch (RuntimeException e) {
+            counters.skipped.incrementAndGet();
+            continue;
           }
-
-          if (!hasNext) {
-            break;
-          }
-
-          SourceDocument d = iter.next();
 
           if (!d.indexable()) {
             counters.unindexable.incrementAndGet();
@@ -234,6 +224,11 @@ public final class IndexCollection {
           }
           cnt++;
         }
+
+        if (iter.getNextRecordStatus() == BaseFileSegment.Status.ERROR) {
+          counters.errors.incrementAndGet();
+        }
+
         iter.close();
         LOG.info(inputFile.getParent().getFileName().toString() + File.separator +
             inputFile.getFileName().toString() + ": " + cnt + " docs added.");

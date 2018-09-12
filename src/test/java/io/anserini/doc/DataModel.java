@@ -18,9 +18,6 @@ package io.anserini.doc;
 
 import java.nio.file.Paths;
 import java.util.*;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -37,6 +34,7 @@ public class DataModel {
   private String generator;
   private int threads;
   private String topic_reader;
+  private List<String> input_roots;
   private String input;
   private String index_path;
   private List<String> index_options;
@@ -172,7 +170,15 @@ public class DataModel {
   public void setTopic_reader(String topic_reader) {
     this.topic_reader = topic_reader;
   }
-
+  
+  public List<String> getInput_roots() {
+    return input_roots;
+  }
+  
+  public void setInput_roots(List<String> input_roots) {
+    this.input_roots = input_roots;
+  }
+  
   public String getInput() {
     return input;
   }
@@ -276,7 +282,7 @@ public class DataModel {
         builder.append(getSearch_command());
         builder.append(" ").append("-topicreader").append(" ").append(getTopic_reader());
         builder.append(" ").append("-index").append(" ").append("lucene-index."+collection+".pos+docvectors");
-        builder.append(" ").append("-topic").append(" ").append(Paths.get(getTopic_root(), topic.getPath()).toString());
+        builder.append(" ").append("-topics").append(" ").append(Paths.get(getTopic_root(), topic.getPath()).toString());
         builder.append(" ").append("-output").append(" ").append("run."+collection+"."+model.getName()+"."+topic.getPath());
         if (model.getParams() != null) {
           for (String option : model.getParams()) {
@@ -309,7 +315,7 @@ public class DataModel {
           }
           String evalCmdResidual = "";
           evalCmdResidual += " "+Paths.get(getQrels_root(), topic.getQrel());
-          evalCmdResidual += " -output run."+collection+"."+model.getName()+"."+topic.getPath();
+          evalCmdResidual += " run."+collection+"."+model.getName()+"."+topic.getPath();
           evalCmdResidual += "\n";
           if (eval.isCan_combine() || evalCmdOption.isEmpty()) {
             combinedEvalCmd.putIfAbsent(evalCmd, new HashMap<>());

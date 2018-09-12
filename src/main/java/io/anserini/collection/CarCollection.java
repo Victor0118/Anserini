@@ -63,13 +63,7 @@ public class CarCollection extends DocumentCollection
     }
 
     @Override
-    public boolean hasNext() {
-      if (bufferedRecord != null) {
-        return true;
-      } else if (atEOF) {
-        return false;
-      }
-
+    public void readNext() throws IOException {
       System.setProperty("file.encoding", "UTF-8");
       Data.Paragraph p;
       p = iter.next();
@@ -86,8 +80,9 @@ public class CarCollection extends DocumentCollection
       // String joinedText = String.join(" ", textTokens);
 
       bufferedRecord = new Document(p.getParaId(), text);
-
-      return true;
+      if (!iter.hasNext()) {
+        atEOF = true;
+      }
     }
   }
 
