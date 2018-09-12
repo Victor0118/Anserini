@@ -82,10 +82,10 @@ public class CarCollection extends DocumentCollection
           .replace(".", "").replace(",", "").replace("[", " ").replace("]", " ");
       text = text.toLowerCase();
 
-      List<String> textTokens = AnalyzerUtils.tokenize(new EnglishAnalyzer(), text);
-      String joinedText = String.join(" ", textTokens);
+      // List<String> textTokens = AnalyzerUtils.tokenize(new EnglishAnalyzer(), text);
+      // String joinedText = String.join(" ", textTokens);
 
-      bufferedRecord = new Document(p.getParaId(), joinedText);
+      bufferedRecord = new Document(p.getParaId(), text);
 
       return true;
     }

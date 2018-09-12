@@ -394,4 +394,5 @@ public final class IndexCollection {
 
     new IndexCollection(indexCollectionArgs).run();
   }
+
 }
