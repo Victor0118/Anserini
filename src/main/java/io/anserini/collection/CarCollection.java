@@ -19,11 +19,15 @@ package io.anserini.collection;
 import edu.unh.cs.treccar_v2.Data;
 import edu.unh.cs.treccar_v2.read_data.DeserializeData;
 
+import io.anserini.analysis.TweetAnalyzer;
+import io.anserini.util.AnalyzerUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 
 /**
  * A document collection for the TREC Complex Answer Retrieval (CAR) Track.
@@ -63,7 +67,19 @@ public class CarCollection extends DocumentCollection
       System.setProperty("file.encoding", "UTF-8");
       Data.Paragraph p;
       p = iter.next();
-      bufferedRecord = new Document(p.getParaId(), p.getTextOnly());
+      String text = p.getTextOnly();
+      text = text.replace("&amp;", " ").replace("&lt;", " ").replace("&gt;", " ").replace("&quot;", " ").replace("\"", " ")
+          .replace("(", " ").replace(")", " ").replace("\"", " ").replace(";", " ").replace(":", " ").replace("<93>", " ")
+          .replace("<98>", " ").replace("<99>", " ").replace("<9f>", " ").replace("<80>", " ").replace("<82>", " ")
+          .replace("<83>", " ").replace("<84>", " ").replace("<85>", " ").replace("<89>", " ").replace("=", " ")
+          .replace("*", " ").replace("\n", " ").replace("!", " ").replace("-", " ").replace("[[", " ").replace("]]", " ")
+          .replace(".", "").replace(",", "").replace("[", " ").replace("]", " ");
+      text = text.toLowerCase();
+
+      // List<String> textTokens = AnalyzerUtils.tokenize(new EnglishAnalyzer(), text);
+      // String joinedText = String.join(" ", textTokens);
+
+      bufferedRecord = new Document(p.getParaId(), text);
       if (!iter.hasNext()) {
         atEOF = true;
       }
