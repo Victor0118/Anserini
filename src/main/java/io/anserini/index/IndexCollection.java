@@ -19,6 +19,7 @@ package io.anserini.index;
 import io.anserini.analysis.EnglishStemmingAnalyzer;
 import io.anserini.analysis.TweetAnalyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import io.anserini.collection.*;
 import io.anserini.index.generator.LuceneDocumentGenerator;
 import org.apache.commons.io.FileUtils;
@@ -302,7 +303,7 @@ public final class IndexCollection {
         new EnglishStemmingAnalyzer(args.stemmer, CharArraySet.EMPTY_SET) : new EnglishStemmingAnalyzer(args.stemmer);
     
     final TweetAnalyzer tweetAnalyzer = new TweetAnalyzer(args.tweetStemming);
-    final SmartChineseAnalyzer chineseAnalyzer = new SmartChineseAnalyzer(args.chinese);
+    final CJKAnalyzer chineseAnalyzer = new CJKAnalyzer();
     final IndexWriterConfig config = args.collectionClass.equals("TweetCollection") ?
         new IndexWriterConfig(tweetAnalyzer) : args.chinese? new IndexWriterConfig(chineseAnalyzer) : new IndexWriterConfig(analyzer);
     config.setSimilarity(new BM25Similarity());
