@@ -29,9 +29,9 @@ import io.anserini.rerank.lib.Rm3Reranker;
 import io.anserini.rerank.lib.ScoreTiesAdjusterReranker;
 import io.anserini.search.query.BagOfWordsQueryGenerator;
 import io.anserini.search.query.SdmQueryGenerator;
-import io.anserini.search.similarity.TaggedSimilarity;
 import io.anserini.search.similarity.F2ExpSimilarity;
 import io.anserini.search.similarity.F2LogSimilarity;
+import io.anserini.search.similarity.TaggedSimilarity;
 import io.anserini.search.topicreader.NewsBackgroundLinkingTopicReader;
 import io.anserini.search.topicreader.TopicReader;
 import io.anserini.util.AnalyzerUtils;
@@ -45,13 +45,13 @@ import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queries.TermsQuery;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.similarities.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.OptionHandlerFilter;
@@ -294,21 +294,21 @@ public final class SearchCollection implements Closeable {
   }
 
   @SuppressWarnings("unchecked")
-  public<K> void runTopics() throws IOException, QueryNodeException {
-    Path topicsFile = Paths.get(args.topics);
-  
-    if (!Files.exists(topicsFile) || !Files.isRegularFile(topicsFile) || !Files.isReadable(topicsFile)) {
-      throw new IllegalArgumentException("Topics file : " + topicsFile + " does not exist or is not a (readable) file.");
-    }
-  
+  public<K> void runTopics() throws IOException {
     TopicReader<K> tr;
-    SortedMap<K, Map<String, String>> topics;
-    try {
-      tr = (TopicReader<K>) Class.forName("io.anserini.search.topicreader." + args.topicReader + "TopicReader")
-          .getConstructor(Path.class).newInstance(topicsFile);
-      topics = tr.read();
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Unable to load topic reader: " + args.topicReader);
+    SortedMap<K, Map<String, String>> topics = new TreeMap<>();
+    for (String singleTopicsFile : args.topics) {
+      Path topicsFilePath = Paths.get(singleTopicsFile);
+      if (!Files.exists(topicsFilePath) || !Files.isRegularFile(topicsFilePath) || !Files.isReadable(topicsFilePath)) {
+        throw new IllegalArgumentException("Topics file : " + topicsFilePath + " does not exist or is not a (readable) file.");
+      }
+      try {
+        tr = (TopicReader<K>) Class.forName("io.anserini.search.topicreader." + args.topicReader + "TopicReader")
+            .getConstructor(Path.class).newInstance(topicsFilePath);
+        topics.putAll(tr.read());
+      } catch (Exception e) {
+        throw new IllegalArgumentException("Unable to load topic reader: " + args.topicReader);
+      }
     }
   
     final String runTag = args.runtag == null ? "Anserini" : args.runtag;
@@ -340,7 +340,7 @@ public final class SearchCollection implements Closeable {
   }
   
   public<K> ScoredDocuments search(IndexSearcher searcher, K qid, String queryString, RerankerCascade cascade)
-      throws IOException, QueryNodeException {
+      throws IOException {
     Query query = null;
     if (qc == QueryConstructor.SequentialDependenceModel) {
       query = new SdmQueryGenerator(args.sdm_tw, args.sdm_ow, args.sdm_uw).buildQuery(FIELD_BODY, analyzer, queryString);
@@ -383,10 +383,10 @@ public final class SearchCollection implements Closeable {
         // Because the actual query strings are extracted from tokenized document!!!
         q = new StandardQueryParser().parse(queryStr, FIELD_BODY);
       }
-      Query filter = new TermsQuery(
-          new Term(WapoGenerator.WapoField.KICKER.name, "Opinions"),
-          new Term(WapoGenerator.WapoField.KICKER.name, "Letters to the Editor"),
-          new Term(WapoGenerator.WapoField.KICKER.name, "The Post's View")
+      Query filter = new TermInSetQuery(WapoGenerator.WapoField.KICKER.name, new BytesRef("Opinions"), new BytesRef("Letters to the Editor"), new BytesRef("The Post's View")
+//          new Term(WapoGenerator.WapoField.KICKER.name, "Opinions"),
+//          new Term(WapoGenerator.WapoField.KICKER.name, "Letters to the Editor"),
+//          new Term(WapoGenerator.WapoField.KICKER.name, "The Post's View")
       );
       BooleanQuery.Builder builder = new BooleanQuery.Builder();
       builder.add(filter, BooleanClause.Occur.MUST_NOT);

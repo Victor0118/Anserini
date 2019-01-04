@@ -1,5 +1,5 @@
 /**
- * Anserini: A toolkit for reproducible information retrieval research built on Lucene
+ * Anserini: An information retrieval toolkit built on Lucene
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ public class F2LogSimilarity extends AxiomaticSimilarity {
   public F2LogSimilarity(float s) {
     super(s);
   }
-
+  
   /** F2Log with these default values:
    * <ul>
    *   <li>{@code s = 0.5}</li>
@@ -40,7 +40,7 @@ public class F2LogSimilarity extends AxiomaticSimilarity {
   float idf(long docFreq, long docCount) {
     return (float) Math.log((1.0f + docCount) / docFreq);
   }
-
+  
   @Override
   public String toString() {
     return "F2Log(s=" + s +")";

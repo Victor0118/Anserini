@@ -1,5 +1,5 @@
 /**
- * Anserini: A toolkit for reproducible information retrieval research built on Lucene
+ * Anserini: An information retrieval toolkit built on Lucene
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.anserini.search.similarity;
 
 public class F2ExpSimilarity extends AxiomaticSimilarity {
   private final float k = 0.35f;
-
+  
   /**
    * F2Exp with the supplied parameter values.
    * @param s Controls to what degree document length normalizes tf values.
@@ -28,7 +28,7 @@ public class F2ExpSimilarity extends AxiomaticSimilarity {
   public F2ExpSimilarity(float s) {
     super(s);
   }
-
+  
   /** F2Exp with these default values:
    * <ul>
    *   <li>{@code k = 0.35}</li>
@@ -42,7 +42,7 @@ public class F2ExpSimilarity extends AxiomaticSimilarity {
   float idf(long docFreq, long docCount) {
     return (float) Math.pow((docCount + 1.0) / docFreq, this.k);
   }
-
+  
   @Override
   public String toString() {
     return "F2Exp(s=" + s +")";

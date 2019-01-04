@@ -1,5 +1,5 @@
 /**
- * Anserini: A toolkit for reproducible information retrieval research built on Lucene
+ * Anserini: An information retrieval toolkit built on Lucene
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,22 @@ import org.apache.lucene.util.SmallFloat;
  */
 public abstract class AxiomaticSimilarity extends Similarity {
   protected final float s;
-
+  /** Cache of decoded bytes. */
+  protected static final float[] OLD_LENGTH_TABLE = new float[256];
+  protected static final float[] LENGTH_TABLE = new float[256];
+  
+  static {
+    for (int i = 1; i < 256; i++) {
+      float f = SmallFloat.byte315ToFloat((byte)i);
+      OLD_LENGTH_TABLE[i] = 1.0f / (f*f);
+    }
+    OLD_LENGTH_TABLE[0] = 1.0f / OLD_LENGTH_TABLE[255]; // otherwise inf
+    
+    for (int i = 0; i < 256; i++) {
+      LENGTH_TABLE[i] = SmallFloat.byte4ToInt((byte) i);
+    }
+  }
+  
   /**
    * @param s Generic parater s
    * @throws IllegalArgumentException if {@code s} is infinite or if {@code s} is
@@ -48,7 +63,7 @@ public abstract class AxiomaticSimilarity extends Similarity {
     }
     this.s = s;
   }
-
+  
   /** Default parameter:
    * <ul>
    *   <li>{@code s = 0.5}</li>
@@ -88,7 +103,7 @@ public abstract class AxiomaticSimilarity extends Similarity {
   float scorePayload(int doc, int start, int end, BytesRef payload) {
     return 1;
   }
-
+  
   /** The default implementation computes the average as <code>sumTotalTermFreq / docCount</code>,
    * or returns <code>1</code> if the index does not store sumTotalTermFreq:
    * any field that omits frequency information).
@@ -105,36 +120,13 @@ public abstract class AxiomaticSimilarity extends Similarity {
       return (float) (sumTotalTermFreq / (double) docCount);
     }
   }
-
-  /** The default implementation encodes <code>boost / sqrt(length)</code>
-   * with {@link SmallFloat#floatToByte315(float)}.  This is compatible with
-   * Lucene's default implementation.  If you change this, then you should
-   * change {@link #decodeNormValue(byte)} to match.
-   *
-   * @param boost boost
-   * @param fieldLength fieldLength
-   * @return encoded document lengths
-   * */
-  byte encodeNormValue(float boost, int fieldLength) {
-    return SmallFloat.floatToByte315(boost / (float) Math.sqrt(fieldLength));
-  }
-
-  /** The default implementation returns <code>1 / f<sup>2</sup></code>
-   * where <code>f</code> is {@link SmallFloat#byte315ToFloat(byte)}.
-   *
-   * @param b encoded document length
-   * @return decoded document length
-   * */
-  float decodeNormValue(byte b) {
-    return NORM_TABLE[b & 0xFF];
-  }
-
+  
   /**
    * True if overlap tokens (tokens with a position of increment of zero) are
    * discounted from the document's length.
    */
   boolean discountOverlaps = true;
-
+  
   /** Sets whether overlap tokens (Tokens with 0 position increment) are
    *  ignored when computing norm.  By default this is true, meaning overlap
    *  tokens do not count when computing norms.
@@ -144,7 +136,7 @@ public abstract class AxiomaticSimilarity extends Similarity {
   public void setDiscountOverlaps(boolean v) {
     discountOverlaps = v;
   }
-
+  
   /**
    * Returns true if overlap tokens are discounted from the document's length.
    * @see #setDiscountOverlaps
@@ -154,10 +146,10 @@ public abstract class AxiomaticSimilarity extends Similarity {
   public boolean getDiscountOverlaps() {
     return discountOverlaps;
   }
-
+  
   /** Cache of decoded bytes. */
   private static final float[] NORM_TABLE = new float[256];
-
+  
   static {
     for (int i = 1; i < 256; i++) {
       float f = SmallFloat.byte315ToFloat((byte)i);
@@ -165,14 +157,19 @@ public abstract class AxiomaticSimilarity extends Similarity {
     }
     NORM_TABLE[0] = 1.0f / NORM_TABLE[255]; // otherwise inf
   }
-
-
+  
+  
   @Override
-  public long computeNorm(FieldInvertState state) {
+  public final long computeNorm(FieldInvertState state) {
     final int numTerms = discountOverlaps ? state.getLength() - state.getNumOverlap() : state.getLength();
-    return encodeNormValue(state.getBoost(), numTerms);
+    int indexCreatedVersionMajor = state.getIndexCreatedVersionMajor();
+    if (indexCreatedVersionMajor >= 7) {
+      return SmallFloat.intToByte4(numTerms);
+    } else {
+      return SmallFloat.floatToByte315((float) (1 / Math.sqrt(numTerms)));
+    }
   }
-
+  
   /**
    * Computes a score factor for a simple term and returns an explanation
    * for that score factor.
@@ -201,7 +198,7 @@ public abstract class AxiomaticSimilarity extends Similarity {
     final float idf = idf(df, docCount);
     return Explanation.match(idf, "idf(docFreq=" + df + ", docCount=" + docCount + ")");
   }
-
+  
   /**
    * Computes a score factor for a phrase.
    *
@@ -217,7 +214,7 @@ public abstract class AxiomaticSimilarity extends Similarity {
    */
   public Explanation idfExplain(CollectionStatistics collectionStats, TermStatistics termStats[]) {
     final long docCount = collectionStats.docCount() == -1 ? collectionStats.maxDoc() : collectionStats.docCount();
-    float idf = 0.0f;
+    double idf = 0d;
     List<Explanation> details = new ArrayList<>();
     for (final TermStatistics stat : termStats ) {
       final long df = stat.docFreq();
@@ -225,27 +222,28 @@ public abstract class AxiomaticSimilarity extends Similarity {
       details.add(Explanation.match(termIdf, "idf(docFreq=" + df + ", docCount=" + docCount + ")"));
       idf += termIdf;
     }
-    return Explanation.match(idf, "idf(), sum of:", details);
+    return Explanation.match((float)idf, "idf(), sum of:", details);
   }
   
   @Override
-  public SimWeight computeWeight(CollectionStatistics collectionStats, TermStatistics... termStats) {
+  public final SimWeight computeWeight(float boost, CollectionStatistics collectionStats, TermStatistics... termStats) {
     Explanation idf = termStats.length == 1 ? idfExplain(collectionStats, termStats[0]) : idfExplain(collectionStats, termStats);
-    
     float avgdl = avgFieldLength(collectionStats);
-    
-    // compute freq-independent part of f2log equation across all norm values
-    float cache[] = new float[256];
+  
+    float[] oldCache = new float[256];
+    float[] cache = new float[256];
     for (int i = 0; i < cache.length; i++) {
-      cache[i] = s + s * decodeNormValue((byte)i) / avgdl;
+      oldCache[i] = s + s * OLD_LENGTH_TABLE[i] / avgdl;
+      cache[i] = s + s * LENGTH_TABLE[i] / avgdl;
     }
-    return new Stats(collectionStats.field(), idf, avgdl, cache);
+    return new Stats(collectionStats.field(), boost, idf, avgdl, oldCache, cache);
   }
   
+  
   @Override
-  public SimScorer simScorer(SimWeight stats, LeafReaderContext context) throws IOException {
-    Stats f2logStats = (Stats) stats;
-    return new F2LogDocScorer(f2logStats, context.reader().getNormValues(f2logStats.field));
+  public final SimScorer simScorer(SimWeight stats, LeafReaderContext context) throws IOException {
+    Stats axStats = (Stats) stats;
+    return new AxDocScorer(axStats, context.reader().getMetaData().getCreatedVersionMajor(), context.reader().getNormValues(axStats.field));
   }
   
   /** DocumentCollection statistics for the F2Log model. */
@@ -260,61 +258,68 @@ public abstract class AxiomaticSimilarity extends Similarity {
     public float weight;
     /** field name, for pulling norms */
     public final String field;
-    /** precomputed norm[256] with k1 * ((1 - b) + b * dl / avgdl) */
-    public final float cache[];
+    /** precomputed norm[256] with k1 * ((1 - b) + b * dl / avgdl)
+     *  for both OLD_LENGTH_TABLE and LENGTH_TABLE */
+    private final float[] oldCache, cache;
     
-    Stats(String field, Explanation idf, float avgdl, float cache[]) {
+    Stats(String field, float boost, Explanation idf, float avgdl, float[] oldCache, float[] cache) {
       this.field = field;
       this.idf = idf;
       this.avgdl = avgdl;
-      this.cache = cache;
-      normalize(1f, 1f);
-    }
-    
-    @Override
-    public float getValueForNormalization() {
-      // we return a TF-IDF like normalization to be nice, but we don't actually normalize ourselves.
-      return weight * weight;
-    }
-    
-    @Override
-    public void normalize(float queryNorm, float boost) {
-      // we don't normalize with queryNorm at all, we just capture the top-level boost
-      this.boost = boost;
       this.weight = idf.getValue() * boost;
+      this.oldCache = oldCache;
+      this.cache = cache;
     }
   }
   
-  class F2LogDocScorer extends SimScorer {
+  class AxDocScorer extends SimScorer {
     private final Stats stats;
-    private final float weightValue;
+    private final float weightValue; // boost * idf
     private final NumericDocValues norms;
+    /** precomputed cache for all length values */
+    private final float[] lengthCache;
+    /** precomputed norm[256] with k1 * ((1 - b) + b * dl / avgdl) */
     private final float[] cache;
-    
-    F2LogDocScorer(Stats stats, NumericDocValues norms) throws IOException {
+  
+    AxDocScorer(Stats stats, int indexCreatedVersionMajor, NumericDocValues norms) throws IOException {
       this.stats = stats;
       this.weightValue = stats.weight;
-      this.cache = stats.cache;
       this.norms = norms;
+      if (indexCreatedVersionMajor >= 7) {
+        lengthCache = LENGTH_TABLE;
+        cache = stats.cache;
+      } else {
+        lengthCache = OLD_LENGTH_TABLE;
+        cache = stats.oldCache;
+      }
     }
     
     /* Score function is:
      * <pre class="prettyprint">
                                                      occurrences
       score = termWeight * IDF * ---------------------------------------------------------
-                                 occurrences + s + documentLength * ( s / avgDocLength )
+                                 occurrences + s + documentLength * s / avgDocLength
        </pre>
      */
     @Override
-    public float score(int doc, float freq) {
+    public float score(int doc, float freq) throws IOException {
       // if there are no norms, we act as if b=0
-      float norm = norms == null ? 1.0f : cache[(byte)norms.get(doc) & 0xFF];
+      float norm;
+      if (norms == null) {
+        norm = 0.0f;
+      } else {
+        if (norms.advanceExact(doc)) {
+          norm = cache[((byte) norms.longValue()) & 0xFF];
+        } else {
+          norm = cache[0];
+        }
+      }
       return weightValue * freq / (freq + norm);
     }
     
     @Override
-    public Explanation explain(int doc, Explanation freq) {
-      return explainScore(doc, freq, stats, norms);
+    public Explanation explain(int doc, Explanation freq) throws IOException {
+      return explainScore(doc, freq, stats, norms, lengthCache);
     }
     
     @Override
@@ -328,43 +333,49 @@ public abstract class AxiomaticSimilarity extends Similarity {
     }
   }
   
-  Explanation explainTFNorm(int doc, Explanation freq, Stats stats, NumericDocValues norms) {
+  private Explanation explainTFNorm(int doc, Explanation freq, Stats stats, NumericDocValues norms, float[] lengthCache) throws IOException {
     List<Explanation> subs = new ArrayList<>();
     subs.add(freq);
     subs.add(Explanation.match(s, "parameter s"));
     if (norms == null) {
-      subs.add(Explanation.match(0, "parameter s (norms omitted for field)"));
-      return Explanation.match(
-          freq.getValue() / freq.getValue(),
-          "tfNorm, computed from:", subs);
+      subs.add(Explanation.match(0, "norm"));
+      return Explanation.match(1,
+          "tfNorm, computed as constant from:", subs);
     } else {
-      float doclen = decodeNormValue((byte)norms.get(doc));
+      byte norm;
+      if (norms.advanceExact(doc)) {
+        norm = (byte) norms.longValue();
+      } else {
+        norm = 0;
+      }
+      float doclen = lengthCache[norm & 0xff];
       subs.add(Explanation.match(stats.avgdl, "avgFieldLength"));
       subs.add(Explanation.match(doclen, "fieldLength"));
       return Explanation.match(
-          freq.getValue() / (freq.getValue() + s + s * doclen/stats.avgdl),
-          "tfNorm, computed from:", subs);
+          (freq.getValue() / (freq.getValue() + s + s * doclen/stats.avgdl)),
+          "tfNorm, computed as (freq / (freq + s + s * fieldLength / avgFieldLength) from:", subs);
     }
   }
   
-  Explanation explainScore(int doc, Explanation freq, Stats stats, NumericDocValues norms) {
+  
+  private Explanation explainScore(int doc, Explanation freq, Stats stats, NumericDocValues norms, float[] lengthCache) throws IOException {
     Explanation boostExpl = Explanation.match(stats.boost, "boost");
     List<Explanation> subs = new ArrayList<>();
     if (boostExpl.getValue() != 1.0f)
       subs.add(boostExpl);
     subs.add(stats.idf);
-    Explanation tfNormExpl = explainTFNorm(doc, freq, stats, norms);
+    Explanation tfNormExpl = explainTFNorm(doc, freq, stats, norms, lengthCache);
     subs.add(tfNormExpl);
     return Explanation.match(
         boostExpl.getValue() * stats.idf.getValue() * tfNormExpl.getValue(),
         "score(doc="+doc+",freq="+freq+"), product of:", subs);
   }
-
+  
   @Override
   public String toString() {
     throw new UnsupportedOperationException();
   }
-
+  
   /**
    * Returns the <code>b</code> parameter
    * @see #AxiomaticSimilarity(float)
