@@ -112,7 +112,7 @@
             <program>
               <mainClass>io.anserini.index.IndexUtils</mainClass>
               <id>IndexUtils</id>
-            </program>
+                </program>
           </programs>
         </configuration>
       </plugin>

@@ -17,6 +17,7 @@
 package io.anserini.search;
 
 import io.anserini.index.generator.LuceneDocumentGenerator;
+import io.anserini.index.generator.TweetGenerator;
 import io.anserini.rerank.RerankerCascade;
 import io.anserini.rerank.RerankerContext;
 import io.anserini.rerank.ScoredDocuments;
@@ -54,6 +55,7 @@ public class SimpleSearcher implements Closeable {
   private Similarity similarity;
   private Analyzer analyzer;
   private RerankerCascade cascade;
+  private String docBody;
 
   protected class Result {
     public String docid;
@@ -70,6 +72,10 @@ public class SimpleSearcher implements Closeable {
   }
 
   public SimpleSearcher(String indexDir) throws IOException {
+      this(indexDir, "LuceneDocumentGenerator");
+  }
+
+  public SimpleSearcher(String indexDir, String generatorClass) throws IOException {
     Path indexPath = Paths.get(indexDir);
 
     if (!Files.exists(indexPath) || !Files.isDirectory(indexPath) || !Files.isReadable(indexPath)) {
@@ -79,7 +85,13 @@ public class SimpleSearcher implements Closeable {
     this.reader = DirectoryReader.open(FSDirectory.open(indexPath));
     this.similarity = new LMDirichletSimilarity(1000.0f);
     this.analyzer = new EnglishAnalyzer();
-    setNormalReranker();
+    if (generatorClass == "TweetGenerator") {
+        this.docBody = TweetGenerator.FIELD_BODY;
+    }
+    else {
+        this.docBody = LuceneDocumentGenerator.FIELD_BODY;
+    }
+    setNormalReranker();    
   }
 
   public void setRM3Reranker() {
@@ -141,7 +153,7 @@ public class SimpleSearcher implements Closeable {
   public Result[] search(String q, int k) throws IOException {
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
-    Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
+    Query query = new BagOfWordsQueryGenerator().buildQuery(this.docBody, analyzer, q);
 
     TopDocs rs = searcher.search(query, k);
 
