@@ -16,11 +16,17 @@
 
 package io.anserini.search;
 
-import io.anserini.index.generator.TweetGenerator;
+import io.anserini.index.generator.LuceneDocumentGenerator;
+import io.anserini.rerank.RerankerCascade;
+import io.anserini.rerank.RerankerContext;
+import io.anserini.rerank.ScoredDocuments;
 import io.anserini.search.query.BagOfWordsQueryGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import io.anserini.rerank.lib.Rm3Reranker;
+import io.anserini.rerank.lib.ScoreTiesAdjusterReranker;
+import io.anserini.util.AnalyzerUtils;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
@@ -43,6 +49,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+import java.util.List;
+
+import static io.anserini.index.generator.LuceneDocumentGenerator.FIELD_BODY;
 
 
 public class SimpleSearcherTest implements Closeable {
@@ -50,6 +59,7 @@ public class SimpleSearcherTest implements Closeable {
   private final IndexReader reader;
   private Similarity similarity;
   private Analyzer analyzer;
+  private RerankerCascade cascade;
 
   protected class Result {
     public String docid;
@@ -75,9 +85,30 @@ public class SimpleSearcherTest implements Closeable {
 
     this.reader = DirectoryReader.open(FSDirectory.open(indexPath));
     this.similarity = new LMDirichletSimilarity(1000.0f);
-    this.analyzer = new CJKAnalyzer();
+    this.analyzer = new EnglishAnalyzer();
+	setNormalReranker();
   }
 
+  public void setRM3Reranker() {
+    setRM3Reranker(20, 50, 0.6f, false);
+  }
+
+  public void setRM3Reranker(int fbTerms, int fbDocs, float originalQueryWeight) {
+    setRM3Reranker(fbTerms, fbDocs, originalQueryWeight, false);
+  }
+
+  public void setNormalReranker() {
+    cascade = new RerankerCascade();
+    cascade.add(new ScoreTiesAdjusterReranker());
+  }
+
+  public void setRM3Reranker(int fbTerms, int fbDocs, float originalQueryWeight, boolean rm3_outputQuery) {
+    cascade = new RerankerCascade();
+    cascade.add(new Rm3Reranker(this.analyzer, FIELD_BODY, fbTerms, fbDocs, originalQueryWeight, rm3_outputQuery));
+    cascade.add(new ScoreTiesAdjusterReranker());
+  }
+
+  
   @Override
   public void close() throws IOException {
     reader.close();
@@ -99,20 +130,26 @@ public class SimpleSearcherTest implements Closeable {
     int k = 20;
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
-    Query query = new BagOfWordsQueryGenerator().buildQuery(TweetGenerator.FIELD_BODY, analyzer, q);
+    this.setRM3Reranker();
+    Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
 
     TopDocs rs = searcher.search(query, k);
-    ScoreDoc[] hits = rs.scoreDocs;
+	List<String> queryTokens = AnalyzerUtils.tokenize(analyzer, q);
+    SearchArgs searchArgs = new SearchArgs();
+    searchArgs.arbitraryScoreTieBreak = false;
+    searchArgs.hits = k;
+    RerankerContext context = new RerankerContext<>(searcher, null, query, null, q, queryTokens, null, searchArgs);
+    ScoredDocuments hits = cascade.run(ScoredDocuments.fromTopDocs(rs, searcher), context);  
 
-    Result[] results = new Result[hits.length];
-    for (int i = 0; i < hits.length; i++) {
-      Document doc = searcher.doc(hits[i].doc);
-      String docid = doc.getField(TweetGenerator.FIELD_ID).stringValue();
-      IndexableField field = doc.getField(TweetGenerator.FIELD_RAW);
+	Result[] results = new Result[hits.ids.length];
+    for (int i = 0; i < hits.ids.length; i++) {
+      Document doc = hits.documents[i];
+      String docid = doc.getField(LuceneDocumentGenerator.FIELD_ID).stringValue();
+      IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
       String content = field == null ? null : field.stringValue();
-      results[i] = new Result(docid, hits[i].doc, hits[i].score, content);
+      results[i] = new Result(docid, hits.ids[i], hits.scores[i], content);
       PrintStream out = new PrintStream(System.out, true, "UTF-8");
-      out.printf("score: %f, doc: %s\n", hits[i].score, content);
+      out.printf("score: %f, doc: %s\n", hits.scores[i], content);
     }
     
   }
@@ -125,7 +162,7 @@ public class SimpleSearcherTest implements Closeable {
       return null;
     }
 
-    IndexableField field = doc.getField(TweetGenerator.FIELD_RAW);
+    IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
     return field == null ? null : field.stringValue();
   }
 }
