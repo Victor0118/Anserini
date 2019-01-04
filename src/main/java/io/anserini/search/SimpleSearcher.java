@@ -17,6 +17,7 @@
 package io.anserini.search;
 
 import io.anserini.index.generator.LuceneDocumentGenerator;
+import io.anserini.index.generator.TweetGenerator;
 import io.anserini.rerank.RerankerCascade;
 import io.anserini.rerank.RerankerContext;
 import io.anserini.rerank.ScoredDocuments;
@@ -155,7 +156,7 @@ public class SimpleSearcher implements Closeable {
     Result[] results = new Result[hits.ids.length];
     for (int i = 0; i < hits.ids.length; i++) {
       Document doc = hits.documents[i];
-      String docid = doc.getField(LuceneDocumentGenerator.FIELD_ID).stringValue();
+      String docid = doc.getField(TweetGenerator.FIELD_ID).stringValue();
       IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
       String content = field == null ? null : field.stringValue();
       results[i] = new Result(docid, hits.ids[i], hits.scores[i], content);

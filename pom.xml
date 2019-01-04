@@ -223,7 +223,7 @@
     <dependency>
     <groupId>org.apache.lucene</groupId>
     <artifactId>lucene-analyzers-smartcn</artifactId>
-    <version>${LUCENE_VERSION}</version>
+    <version>${lucene.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.umass.ciir</groupId>

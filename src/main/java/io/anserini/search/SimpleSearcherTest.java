@@ -16,7 +16,7 @@
 
 package io.anserini.search;
 
-import io.anserini.index.generator.LuceneDocumentGenerator;
+import io.anserini.index.generator.TweetGenerator;
 import io.anserini.search.query.BagOfWordsQueryGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +66,7 @@ public class SimpleSearcherTest implements Closeable {
   }
 
   public SimpleSearcherTest() throws IOException {
-    String indexDir = "lucene-index.wiki_zh_sentence.pos+docvectors+rawdocs";
+    String indexDir = "/tuna1/indexes/lucene-index.mb13.pos+docvectors+rawdocs";
     Path indexPath = Paths.get(indexDir);
 
     if (!Files.exists(indexPath) || !Files.isDirectory(indexPath) || !Files.isReadable(indexPath)) {
@@ -99,7 +99,7 @@ public class SimpleSearcherTest implements Closeable {
     int k = 20;
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
-    Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
+    Query query = new BagOfWordsQueryGenerator().buildQuery(TweetGenerator.FIELD_BODY, analyzer, q);
 
     TopDocs rs = searcher.search(query, k);
     ScoreDoc[] hits = rs.scoreDocs;
@@ -107,8 +107,8 @@ public class SimpleSearcherTest implements Closeable {
     Result[] results = new Result[hits.length];
     for (int i = 0; i < hits.length; i++) {
       Document doc = searcher.doc(hits[i].doc);
-      String docid = doc.getField(LuceneDocumentGenerator.FIELD_ID).stringValue();
-      IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
+      String docid = doc.getField(TweetGenerator.FIELD_ID).stringValue();
+      IndexableField field = doc.getField(TweetGenerator.FIELD_RAW);
       String content = field == null ? null : field.stringValue();
       results[i] = new Result(docid, hits[i].doc, hits[i].score, content);
       PrintStream out = new PrintStream(System.out, true, "UTF-8");
@@ -125,7 +125,7 @@ public class SimpleSearcherTest implements Closeable {
       return null;
     }
 
-    IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
+    IndexableField field = doc.getField(TweetGenerator.FIELD_RAW);
     return field == null ? null : field.stringValue();
   }
 }
