@@ -103,10 +103,8 @@ public class WikipediaArticleCollection extends DocumentCollection
       } else if (atEOF) {
         return false;
       }
-
-      if (node == null) {
-        return false;
-      } else if (iterator.hasNext()) {
+      
+      if(iterator.hasNext()) {
         node = iterator.next();
         bufferedRecord = new WikipediaArticleCollection.Document(node.get("id").asText(), node.get("text").asText());
             if (!iterator.hasNext()) { // if bufferedReader contains JSON line objects, we parse the next JSON into node
