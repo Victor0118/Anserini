@@ -479,7 +479,8 @@ public final class IndexCollection {
     // Used for LocalIndexThread
     if (indexPath != null) {
 
-    final CJKAnalyzer chineseAnalyzer = new CJKAnalyzer();
+      final Directory dir = FSDirectory.open(indexPath);
+      final CJKAnalyzer chineseAnalyzer = new CJKAnalyzer();
       final EnglishStemmingAnalyzer analyzer = args.keepStopwords ?
           new EnglishStemmingAnalyzer(args.stemmer, CharArraySet.EMPTY_SET) : new EnglishStemmingAnalyzer(args.stemmer);
       final TweetAnalyzer tweetAnalyzer = new TweetAnalyzer(args.tweetStemming);
