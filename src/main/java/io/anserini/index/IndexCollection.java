@@ -19,7 +19,6 @@ package io.anserini.index;
 import com.google.common.base.Splitter;
 import io.anserini.analysis.EnglishStemmingAnalyzer;
 import io.anserini.analysis.TweetAnalyzer;
-import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import io.anserini.collection.*;
 import io.anserini.index.generator.LuceneDocumentGenerator;
