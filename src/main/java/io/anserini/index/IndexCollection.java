@@ -20,6 +20,7 @@ import com.google.common.base.Splitter;
 import io.anserini.analysis.EnglishStemmingAnalyzer;
 import io.anserini.analysis.TweetAnalyzer;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import io.anserini.collection.*;
 import io.anserini.index.generator.LuceneDocumentGenerator;
 import org.apache.commons.io.FileUtils;
@@ -115,6 +116,9 @@ public final class IndexCollection {
     @Option(name = "-chinese", usage = "boolean to use chinese analyser while indexing")
     public boolean chinese = false;
 
+    @Option(name = "-segmented", usage = "boolean to use white space analyser while indexing")
+    public boolean segmented = false;
+    
     @Option(name = "-tweet.keepRetweets", usage = "boolean switch to keep retweets while indexing")
     public boolean tweetKeepRetweets = false;
 
@@ -390,6 +394,7 @@ public final class IndexCollection {
     LOG.info("Optimize (merge segments)? " + args.optimize);
     LOG.info("Whitelist: " + args.whitelist);
     LOG.info("Chinese?: " + args.chinese);
+    LOG.info("Segmented?: " + args.segmented);
     LOG.info("Solr? " + args.solr);
     if (args.solr) {
       LOG.info("Solr batch size: " + args.solrBatch);
@@ -481,11 +486,12 @@ public final class IndexCollection {
 
       final Directory dir = FSDirectory.open(indexPath);
       final CJKAnalyzer chineseAnalyzer = new CJKAnalyzer();
+      final WhitespaceAnalyzer whitespaceAnalyzer = new WhitespaceAnalyzer();
       final EnglishStemmingAnalyzer analyzer = args.keepStopwords ?
           new EnglishStemmingAnalyzer(args.stemmer, CharArraySet.EMPTY_SET) : new EnglishStemmingAnalyzer(args.stemmer);
       final TweetAnalyzer tweetAnalyzer = new TweetAnalyzer(args.tweetStemming);
       final IndexWriterConfig config = args.collectionClass.equals("TweetCollection") ? 
-          new IndexWriterConfig(tweetAnalyzer) : args.chinese? new IndexWriterConfig(chineseAnalyzer) : new IndexWriterConfig(analyzer);
+          new IndexWriterConfig(tweetAnalyzer) : args.segmented? new IndexWriterConfig(whitespaceAnalyzer) : args.chinese? new IndexWriterConfig(chineseAnalyzer) : new IndexWriterConfig(analyzer);
       config.setSimilarity(new BM25Similarity());
       config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
       config.setRAMBufferSizeMB(args.memorybufferSize);

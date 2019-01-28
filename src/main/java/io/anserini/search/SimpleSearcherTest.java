@@ -75,7 +75,8 @@ public class SimpleSearcherTest implements Closeable {
   }
 
   public SimpleSearcherTest() throws IOException {
-    String indexDir = "/tuna1/indexes/lucene-index.mb13.pos+docvectors+rawdocs";
+    //String indexDir = "/tuna1/indexes/lucene-index.mb13.pos+docvectors+rawdocs";
+    String indexDir = "lucene-index.wiki_zh_paragraph.pos+docvectors+rawdocs";
     Path indexPath = Paths.get(indexDir);
 
     if (!Files.exists(indexPath) || !Files.isDirectory(indexPath) || !Files.isReadable(indexPath)) {
@@ -85,8 +86,13 @@ public class SimpleSearcherTest implements Closeable {
     this.reader = DirectoryReader.open(FSDirectory.open(indexPath));
     this.similarity = new LMDirichletSimilarity(1000.0f);
     this.analyzer = new EnglishAnalyzer();
-	setNormalReranker();
+	setDefaultReranker();
   }
+  
+  public void setSearchChinese(boolean flag) {
+     this.analyzer = flag? new CJKAnalyzer() : new EnglishAnalyzer();
+  }
+
 
   public void setRM3Reranker() {
     setRM3Reranker(20, 50, 0.6f, false);
@@ -96,7 +102,7 @@ public class SimpleSearcherTest implements Closeable {
     setRM3Reranker(fbTerms, fbDocs, originalQueryWeight, false);
   }
 
-  public void setNormalReranker() {
+  public void setDefaultReranker() {
     cascade = new RerankerCascade();
     cascade.add(new ScoreTiesAdjusterReranker());
   }
@@ -129,7 +135,8 @@ public class SimpleSearcherTest implements Closeable {
     int k = 20;
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
-    this.setRM3Reranker();
+    this.setDefaultReranker();
+	this.setSearchChinese(true);
     Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
 
     TopDocs rs = searcher.search(query, k);
@@ -139,6 +146,10 @@ public class SimpleSearcherTest implements Closeable {
     searchArgs.hits = k;
     RerankerContext context = new RerankerContext<>(searcher, null, query, null, q, queryTokens, null, searchArgs);
     ScoredDocuments hits = cascade.run(ScoredDocuments.fromTopDocs(rs, searcher), context);  
+    
+    if (hits.ids.length == 0) {
+        System.out.println("Hit nothing");
+    }
 
 	Result[] results = new Result[hits.ids.length];
     for (int i = 0; i < hits.ids.length; i++) {
