@@ -107,17 +107,11 @@ public class TrecSentenceCollection extends DocumentCollection
       readNextRecord(bufferedReader);
     }
     
-    @Override  
-    public boolean hasNext() {  
-      return atEOF;
-    }
 
     private void readNextRecord(BufferedReader reader) throws IOException {
       // Read a document if iterSentence is null
-      LOG.info("start process...");
       if( iterSentence == null || (!iterSentence.hasNext()) )
       {
-        LOG.info("Read doc by doc...");
         StringBuilder builder = new StringBuilder();
         boolean found = false;
         int inTag = -1;
@@ -196,7 +190,6 @@ public class TrecSentenceCollection extends DocumentCollection
         atEOF=true;
       }
       else{
-          LOG.info("return sent...");
           List<HasWord> wordList = iterSentence.next();
           bufferedRecord = (T) new Document();
           bufferedRecord.id = current_doc_id + "_" + String.valueOf(sentenceIndex);
