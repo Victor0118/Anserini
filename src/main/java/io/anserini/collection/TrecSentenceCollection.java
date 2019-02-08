@@ -114,7 +114,7 @@ public class TrecSentenceCollection extends DocumentCollection
 
     private void readNextRecord(BufferedReader reader) throws IOException {
       // Read a document if iterSentence is null
-      if( !iterSentence.hasNext() )
+      if( iterSentence == null || (!iterSentence.hasNext()) )
       {
         LOG.info("Read doc by doc...");
         StringBuilder builder = new StringBuilder();
