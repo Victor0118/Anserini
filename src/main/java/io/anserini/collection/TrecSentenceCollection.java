@@ -106,6 +106,11 @@ public class TrecSentenceCollection extends DocumentCollection
     public void readNext() throws IOException {
       readNextRecord(bufferedReader);
     }
+    
+    @Override  
+    public boolean hasNext() {  
+      return atEOF;
+    }
 
     private void readNextRecord(BufferedReader reader) throws IOException {
       // Read a document if iterSentence is null
