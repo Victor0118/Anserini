@@ -164,7 +164,7 @@ public class TrecSentenceCollection extends DocumentCollection
             }
           }
 
-          if (line.startsWith(Document.TERMINATING_DOC)) {
+          if (builder.indexOf(Document.TERMINATING_DOCNO) != -1) {
             int i = builder.indexOf(Document.DOCNO);
             if (i == -1) throw new RuntimeException("cannot find start tag " + Document.DOCNO);
             if (i != 0) throw new RuntimeException("should start with " + Document.DOCNO);
