@@ -185,6 +185,7 @@ public class TrecSentenceCollection extends DocumentCollection
             // if (!iterSentence.hasNext()) continue;
             return;
           }
+          atEOF=true;
         }
       }
       else{
