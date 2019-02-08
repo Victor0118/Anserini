@@ -185,8 +185,8 @@ public class TrecSentenceCollection extends DocumentCollection
             // if (!iterSentence.hasNext()) continue;
             return;
           }
-          atEOF=true;
         }
+        atEOF=true;
       }
       else{
           List<HasWord> wordList = iterSentence.next();
