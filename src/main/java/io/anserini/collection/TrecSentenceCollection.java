@@ -178,10 +178,10 @@ public class TrecSentenceCollection extends DocumentCollection
 
             List<HasWord> wordList = iterSentence.next();
             bufferedRecord = (T) new Document();
-            bufferedRecord.id = current_doc_id;
+            bufferedRecord.id = current_doc_id + "_" + String.valueOf(sentenceIndex);
             String sent = SentenceUtils.listToString(wordList);
             bufferedRecord.content = sent.trim();
-            
+            sentenceIndex+=1;
             // if (!iterSentence.hasNext()) continue;
             return;
           }
@@ -190,9 +190,10 @@ public class TrecSentenceCollection extends DocumentCollection
       else{
           List<HasWord> wordList = iterSentence.next();
           bufferedRecord = (T) new Document();
-          bufferedRecord.id = current_doc_id;
+          bufferedRecord.id = current_doc_id + "_" + String.valueOf(sentenceIndex);
           String sent = SentenceUtils.listToString(wordList);
           bufferedRecord.content = sent.trim();
+          sentenceIndex+=1;
           return;
 
       }
