@@ -116,6 +116,7 @@ public class TrecSentenceCollection extends DocumentCollection
       // Read a document if iterSentence is null
       if( !iterSentence.hasNext() )
       {
+        LOG.info("Read doc by doc...");
         StringBuilder builder = new StringBuilder();
         boolean found = false;
         int inTag = -1;
@@ -164,7 +165,7 @@ public class TrecSentenceCollection extends DocumentCollection
             }
           }
 
-          if (builder.indexOf(Document.TERMINATING_DOCNO) != -1) {
+          if (line.startsWith(Document.TERMINATING_DOC)) {
             int i = builder.indexOf(Document.DOCNO);
             if (i == -1) throw new RuntimeException("cannot find start tag " + Document.DOCNO);
             if (i != 0) throw new RuntimeException("should start with " + Document.DOCNO);
