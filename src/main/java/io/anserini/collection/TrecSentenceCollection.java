@@ -114,7 +114,7 @@ public class TrecSentenceCollection extends DocumentCollection
 
     private void readNextRecord(BufferedReader reader) throws IOException {
       // Read a document if iterSentence is null
-      if( iterSentence == null || (!iterSentence.hasNext()) )
+      while( iterSentence == null || (!iterSentence.hasNext()) )
       {
         LOG.info("Read doc by doc...");
         StringBuilder builder = new StringBuilder();
@@ -194,7 +194,7 @@ public class TrecSentenceCollection extends DocumentCollection
         }
         atEOF=true;
       }
-      else{
+      // else{
           List<HasWord> wordList = iterSentence.next();
           bufferedRecord = (T) new Document();
           bufferedRecord.id = current_doc_id + "_" + String.valueOf(sentenceIndex);
@@ -203,7 +203,7 @@ public class TrecSentenceCollection extends DocumentCollection
           sentenceIndex+=1;
           return;
 
-      }
+      // }
     }
 
     @SuppressWarnings("unchecked")
