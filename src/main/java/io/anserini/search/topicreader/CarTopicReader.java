@@ -73,7 +73,7 @@ public class CarTopicReader extends TopicReader {
       // title file
       else if (line.length() != 0) {
         String title = line;
-        String id = "enwiki:" + java.net.URLEncoder.encode(line, "utf-8")
+        String id = java.net.URLEncoder.encode(line, "utf-8") //"enwiki:" + 
             .replace("+", "%20").replace("%28", "(")
             .replace("%29", ")").replace("%27", "'")
             .replace("%2C", ",");

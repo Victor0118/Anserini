@@ -170,7 +170,6 @@ public class SimpleSearcher implements Closeable {
   public Result[] search(String q, int k, long t) throws IOException {
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
-    this.setRM3Reranker();
     Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
     List<String> queryTokens = AnalyzerUtils.tokenize(analyzer, q);
     

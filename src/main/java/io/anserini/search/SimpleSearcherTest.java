@@ -37,8 +37,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.similarities.LMDirichletSimilarity;
-import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.search.similarities.*;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.Closeable;
@@ -76,7 +75,8 @@ public class SimpleSearcherTest implements Closeable {
 
   public SimpleSearcherTest() throws IOException {
     //String indexDir = "/tuna1/indexes/lucene-index.mb13.pos+docvectors+rawdocs";
-    String indexDir = "lucene-index.wiki_zh_paragraph.pos+docvectors+rawdocs";
+	// String indexDir = "/home/Haotian/Anserini/lucene-index.robust04.pos+docvectors+rawdocs";
+    String indexDir = "lucene-index.msmarco.pos+docvectors";
     Path indexPath = Paths.get(indexDir);
 
     if (!Files.exists(indexPath) || !Files.isDirectory(indexPath) || !Files.isReadable(indexPath)) {
@@ -112,7 +112,10 @@ public class SimpleSearcherTest implements Closeable {
     cascade.add(new Rm3Reranker(this.analyzer, FIELD_BODY, fbTerms, fbDocs, originalQueryWeight, rm3_outputQuery));
     cascade.add(new ScoreTiesAdjusterReranker());
   }
-
+  
+  public void setBM25Similarity(float k1, float b) {
+	 this.similarity = new BM25Similarity(k1, b);
+  }
   
   @Override
   public void close() throws IOException {
@@ -136,7 +139,8 @@ public class SimpleSearcherTest implements Closeable {
     IndexSearcher searcher = new IndexSearcher(reader);
     searcher.setSimilarity(similarity);
     this.setDefaultReranker();
-	this.setSearchChinese(true);
+	this.setBM25Similarity(0.9f, 0.4f);
+	this.setSearchChinese(false);
     Query query = new BagOfWordsQueryGenerator().buildQuery(LuceneDocumentGenerator.FIELD_BODY, analyzer, q);
 
     TopDocs rs = searcher.search(query, k);
