@@ -19,9 +19,10 @@ For additional details, see explanation of [common indexing options](common-inde
 
 ## Retrieval
 
-** Users of Anserini will need to download the topics and qrels directly from TREC's from NIST and put them
-at `src/main/resources/topics-and-qrels/` with file names `topics.core18.txt` and `qrels.core18.txt`.
-** We will include the topics and qrels files after NIST publishes them.
+Topics and qrels are stored in `src/main/resources/topics-and-qrels/`, downloaded from NIST:
+
++ `topics.core18.txt`: [50 test topics](https://trec.nist.gov/data/core/topics2018.txt)
++ `qrels.core18.txt`: [Judgments produced by NIST assessors](https://trec.nist.gov/data/core/qrels2018.txt)
 
 After indexing has completed, you should be able to perform retrieval as follows:
 
@@ -72,6 +73,6 @@ All Topics                              | 0.3580    | 0.4193    | 0.4007    | 0.
 
 
 
-## Replicate Log
+## Replication Log
 
 * Results replicated by [@andrewyates](https://github.com/andrewyates) on 2018-11-30 (commit [`c1aac5`](https://github.com/castorini/Anserini/commit/c1aac5e353e2ab77db3e7106cb4c017a09ce0fe9))

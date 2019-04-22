@@ -8,7 +8,9 @@ Anserini is an open-source information retrieval toolkit built on Lucene that ai
 
 ## Getting Started
 
-Anserini requires Java 8 (note that there are [known issues with Java 10 and Java 11](https://github.com/castorini/Anserini/issues/445)) and Maven 3.3+. Build using Maven:
+Anserini requires Java 8 (note that there are [known issues with Java 10 and Java 11](https://github.com/castorini/Anserini/issues/445)) and Maven 3.3+.
+Oracle JVM is necessary to replicate our regression results; there are known issues with OpenJDK (see [this](https://github.com/castorini/Anserini/pull/590) and [this](https://github.com/castorini/Anserini/issues/592)).
+Build using Maven:
 
 ```
 mvn clean package appassembler:assemble
@@ -49,6 +51,7 @@ Note that these regressions capture the "out of the box" experience, based on [_
 + [Experiments on Tweets2011 (MB11 &amp; MB12)](docs/experiments-mb11.md)
 + [Experiments on Tweets2013 (MB13 &amp; MB14)](docs/experiments-mb13.md)
 + [Experiments on CAR17](docs/experiments-car17.md)
++ [Experiments on MS MARCO](docs/experiments-msmarco.md)
 
 Additional regressions:
 
@@ -58,6 +61,8 @@ Additional regressions:
 Runbooks:
 
 + Runbooks for TREC 2018: [[Anserini group](docs/runbook-trec2018-anserini.md)] [[h2oloo group](docs/runbook-trec2018-h2oloo.md)]
++ Runbook for [ECIR 2019 paper on axiomatic semantic term matching](docs/runbook-ecir2019-axiomatic.md)
++ Runbook for [ECIR 2019 paper on cross-collection relevance feedback](docs/runbook-ecir2019-ccrf.md)
 
 ## Additional Documentation
 
@@ -77,7 +82,7 @@ Anserini was designed with Python integration in mind, for connecting with popul
 
 ```
 import jnius_config
-jnius_config.set_classpath("target/anserini-0.3.1-SNAPSHOT-fatjar.jar")
+jnius_config.set_classpath("target/anserini-0.4.1-SNAPSHOT-fatjar.jar")
 
 from jnius import autoclass
 JString = autoclass('java.lang.String')
@@ -101,6 +106,7 @@ hits[0].content
 
 ## Release History
 
++ v0.4.0: March 4, 2019 [[Release Notes](docs/release-notes/release-notes-v0.4.0.md)]
 + v0.3.0: December 16, 2018 [[Release Notes](docs/release-notes/release-notes-v0.3.0.md)]
 + v0.2.0: September 10, 2018 [[Release Notes](docs/release-notes/release-notes-v0.2.0.md)]
 + v0.1.0: July 4, 2018 [[Release Notes](docs/release-notes/release-notes-v0.1.0.md)]
