@@ -20,6 +20,10 @@ import io.anserini.collection.MultifieldSourceDocument;
 import io.anserini.collection.SourceDocument;
 import io.anserini.index.IndexCollection;
 import io.anserini.index.transform.StringTransform;
+
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -49,6 +53,7 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
 
   protected IndexCollection.Counters counters;
   protected IndexCollection.Args args;
+  protected List<String> stringFieldsList;
 
   /**
    * Default constructor.
@@ -94,6 +99,9 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
 
   public void config(IndexCollection.Args args) {
     this.args = args;
+    if (args.stringFields != null) {
+      this.stringFieldsList = Arrays.asList(args.stringFields.split(","));
+    }
   }
 
   public void setCounters(IndexCollection.Counters counters) {
@@ -152,22 +160,28 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
     // Currently we just use all the settings of the main "content" field.
     if (src instanceof MultifieldSourceDocument) {
       ((MultifieldSourceDocument) src).fields().forEach((k, v) -> {
-        FieldType type = new FieldType();
+        if (stringFieldsList.contains(k)) {
+          
+          document.add(new StringField(k, v, Field.Store.YES));
 
-        type.setStored(args.storeTransformedDocs);
-
-        if (args.storeDocvectors) {
-          type.setStoreTermVectors(true);
-          type.setStoreTermVectorPositions(true);
-        }
-
-        if (args.storePositions) {
-          type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
         } else {
-          type.setIndexOptions(IndexOptions.DOCS_AND_FREQS);
-        }
+          FieldType type = new FieldType();
 
-        document.add(new Field(k, v, fieldType));
+          type.setStored(args.storeTransformedDocs);
+
+          if (args.storeDocvectors) {
+            type.setStoreTermVectors(true);
+            type.setStoreTermVectorPositions(true);
+          }
+
+          if (args.storePositions) {
+            type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
+          } else {
+            type.setIndexOptions(IndexOptions.DOCS_AND_FREQS);
+          }
+
+          document.add(new Field(k, v, fieldType));
+        }
       });
     }
 

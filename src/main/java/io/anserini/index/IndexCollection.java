@@ -111,6 +111,9 @@ public final class IndexCollection {
     @Option(name = "-whitelist", usage = "file containing docids, one per line; only specified docids will be indexed.")
     public String whitelist = null;
 
+    @Option(name = "-stringFields", required = false, usage = "fields that are not indexed")
+    public String stringFields = null;
+
     @Option(name = "-tweet.keepRetweets", usage = "boolean switch to keep retweets while indexing")
     public boolean tweetKeepRetweets = false;
 
@@ -426,6 +429,8 @@ public final class IndexCollection {
     LOG.info("Store raw docs? " + args.storeRawDocs);
     LOG.info("Optimize (merge segments)? " + args.optimize);
     LOG.info("Whitelist: " + args.whitelist);
+    LOG.info("String Fields: " + args.stringFields);
+
     LOG.info("Solr? " + args.solr);
     if (args.solr) {
       LOG.info("Solr batch size: " + args.solrBatch);
@@ -464,6 +469,7 @@ public final class IndexCollection {
     } else {
       this.whitelistDocids = null;
     }
+
 
     if (args.solr) {
       GenericObjectPoolConfig<SolrClient> config = new GenericObjectPoolConfig<>();
