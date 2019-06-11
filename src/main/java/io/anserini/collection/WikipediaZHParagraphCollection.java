@@ -93,7 +93,7 @@ public class WikipediaZHParagraphCollection extends DocumentCollection
         node = iterator.next();
         String text = node.get("text").asText();
 		iterParagraph = Arrays.asList(text.split("\n\n")).listIterator();
-        iterParagraph.next();
+        // iterParagraph.next();
       }
     }
 
@@ -133,7 +133,7 @@ public class WikipediaZHParagraphCollection extends DocumentCollection
 			  node = iterator.next();
 			  String text = node.get("text").asText();  
 			  iterParagraph = Arrays.asList(text.split("\n\n")).listIterator();
-			  iterParagraph.next();
+			  // iterParagraph.next();
 			} else {
 			  atEOF = true; // there is no more JSON object in the bufferedReader
 			  return false;
