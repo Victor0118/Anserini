@@ -21,10 +21,10 @@ index_path: indexes/lucene-index.car17v1.5.pos+docvectors+rawdocs # path to the 
 collection: CarCollection
 index_stats:
   documents: 29678360
-  documents (non-empty): 29674409
-  total terms: 1257896158
+  documents (non-empty): 29674425
+  total terms: 1257909884
 topics:
-  - name: "benchmarkY1test"
+  - name: "[TREC 2017 CAR: benchmarkY1test (v1.5)](http://trec-car.cs.unh.edu/datareleases/)"
     path: topics.car17v1.5.benchmarkY1test.txt
     qrel: qrels.car17v1.5.benchmarkY1test.txt
 evals:
@@ -46,14 +46,16 @@ evals:
     can_combine: true
 models:
   - name: bm25
+    display: BM25
     params:
       - -bm25
     results:
       map:
-        - 0.1563
+        - 0.1562
       recip_rank:
-        - 0.2336
+        - 0.2331
   - name: bm25+rm3
+    display: +RM3
     params:
       - -bm25
       - -rm3
@@ -63,6 +65,7 @@ models:
       recip_rank:
         - 0.1923
   - name: bm25+ax
+    display: +Ax
     params:
       - -bm25
       - -axiom
@@ -74,6 +77,7 @@ models:
       recip_rank:
         - 0.1949
   - name: ql
+    display: QL
     params:
       - -ql
     results:
@@ -82,6 +86,7 @@ models:
       recip_rank:
         - 0.2037
   - name: ql+rm3
+    display: +RM3
     params:
       - -ql
       - -rm3
@@ -91,6 +96,7 @@ models:
       recip_rank:
         - 0.1599
   - name: ql+ax
+    display: +Ax
     params:
       - -ql
       - -axiom

@@ -21,10 +21,10 @@ index_path: indexes/lucene-index.car17v2.0.pos+docvectors+rawdocs
 collection: CarCollection
 index_stats:
   documents: 29794689
-  documents (non-empty): 29791041
-  total terms: 1249740109
+  documents (non-empty): 29791059
+  total terms: 1249754054
 topics:
-  - name: "benchmarkY1test"
+  - name: "[TREC 2017 CAR: benchmarkY1test (v2.0)](http://trec-car.cs.unh.edu/datareleases/)"
     path: topics.car17v2.0.benchmarkY1test.txt
     qrel: qrels.car17v2.0.benchmarkY1test.txt
 evals:
@@ -46,23 +46,26 @@ evals:
     can_combine: true
 models:
   - name: bm25
+    display: BM25
     params:
       - -bm25
     results:
       map:
-        - 0.1528
+        - 0.1545
       recip_rank:
-        - 0.2294
+        - 0.2321
   - name: bm25+rm3
+    display: +RM3
     params:
       - -bm25
       - -rm3
     results:
       map:
-        - 0.1270
+        - 0.1286
       recip_rank:
-        - 0.1903
+        - 0.1927
   - name: bm25+ax
+    display: +Ax
     params:
       - -bm25
       - -axiom
@@ -70,27 +73,30 @@ models:
       - -axiom.deterministic
     results:
       map:
-        - 0.1342 
+        - 0.1364 
       recip_rank:
-        - 0.1943
+        - 0.1978
   - name: ql
+    display: QL
     params:
       - -ql
     results:
       map:
-        - 0.1353
+        - 0.1371
       recip_rank:
-        - 0.1989
+        - 0.2013
   - name: ql+rm3
+    display: +RM3
     params:
       - -ql
       - -rm3
     results:
       map:
-        - 0.1065
+        - 0.1080
       recip_rank:
-        - 0.1577
+        - 0.1598
   - name: ql+ax
+    display: +Ax
     params:
       - -ql
       - -axiom
@@ -98,6 +104,6 @@ models:
       - -axiom.deterministic
     results:
       map:
-        - 0.1054
+        - 0.1077
       recip_rank:
-        - 0.1554
+        - 0.1588
