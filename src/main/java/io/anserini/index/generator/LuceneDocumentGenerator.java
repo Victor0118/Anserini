@@ -102,8 +102,6 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
     this.args = args;
     if (args.stringFields != null) {
       this.stringFieldsList = Arrays.asList(args.stringFields.split(","));
-    } else {
-      
     }
     if (args.notAnalyzedFields != null) {
       this.notAnalyzedFieldsList = Arrays.asList(args.notAnalyzedFields.split(","));
