@@ -36,6 +36,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.ConcurrentMergeScheduler;
 import org.apache.lucene.index.DocValuesType;
@@ -141,8 +142,14 @@ public final class IndexCollection {
     @Option(name = "-whitelist", usage = "file containing docids, one per line; only specified docids will be indexed.")
     public String whitelist = null;
 
-    @Option(name = "-stringFields", required = false, usage = "fields that are not indexed")
+    @Option(name = "-stringFields", required = false, usage = "key string fields")
     public String stringFields = null;
+
+    @Option(name = "-notAnalyzedFields", required = false, usage = "Not analyzed fields")
+    public String notAnalyzedFields = null;
+
+    @Option(name = "-language", required = false, usage = "language of corpus")
+    public String language = "en";
 
     @Option(name = "-tweet.keepRetweets", usage = "boolean switch to keep retweets while indexing")
     public boolean tweetKeepRetweets = false;
@@ -778,7 +785,15 @@ public final class IndexCollection {
       final EnglishStemmingAnalyzer analyzer = args.keepStopwords ?
           new EnglishStemmingAnalyzer(args.stemmer, CharArraySet.EMPTY_SET) : new EnglishStemmingAnalyzer(args.stemmer);
       final TweetAnalyzer tweetAnalyzer = new TweetAnalyzer(args.tweetStemming);
-      final IndexWriterConfig config = args.collectionClass.equals("TweetCollection") ? new IndexWriterConfig(tweetAnalyzer) : new IndexWriterConfig(analyzer);
+      final CJKAnalyzer cjkAnalyzer = new CJKAnalyzer();
+      IndexWriterConfig config = null; 
+      if (args.collectionClass.equals("TweetCollection")) {
+        config = new IndexWriterConfig(tweetAnalyzer);
+      } else if (args.language.equals("zh")) {
+        config = new IndexWriterConfig(cjkAnalyzer);
+      } else {
+        config = new IndexWriterConfig(analyzer);
+      }
       config.setSimilarity(new BM25Similarity());
       config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
       config.setRAMBufferSizeMB(args.memorybufferSize);

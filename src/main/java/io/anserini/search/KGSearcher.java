@@ -20,6 +20,7 @@ import io.anserini.analysis.TweetAnalyzer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.LongPoint;
@@ -38,6 +39,8 @@ import org.apache.lucene.store.FSDirectory;
 public class KGSearcher implements Closeable {
 
   public static final String FIELD_URI = "title";
+  public static final String FIELD_PRIOR = "prior";
+  public static final String FIELD_ALIAS = "alias";
   public static final String MATCH = "match";
   public static final String PREFIX = "prefix";
   public static final String FUZZY = "fuzzy";
@@ -49,6 +52,7 @@ public class KGSearcher implements Closeable {
   private RerankerCascade cascade;
   private Similarity similarity;
   private Analyzer analyzer;
+  private String language;
 
   protected class Result {
     public String docid;
@@ -56,13 +60,17 @@ public class KGSearcher implements Closeable {
     public String uri;
     public float score;
     public String content;
+    public String prior;
+    public String alias;
 
-    public Result(String docid, int ldocid, String uri, float score, String content) {
+    public Result(String docid, int ldocid, String uri, float score, String content, String prior, String alias) {
       this.docid = docid;
       this.ldocid = ldocid;
       this.uri = uri;
       this.score = score;
       this.content = content;
+      this.prior = prior;
+      this.alias = alias;
     }
   }
 
@@ -79,6 +87,11 @@ public class KGSearcher implements Closeable {
     this.isRerank = false;
     this.analyzer = new EnglishAnalyzer();
     setDefaultReranker();
+  }
+
+  public void setLanguage(String language) {
+    this.language = language;
+    this.analyzer = language.equals("zh")? new CJKAnalyzer() : this.analyzer;
   }
 
   public void setDefaultReranker() {
@@ -103,7 +116,12 @@ public class KGSearcher implements Closeable {
       return search(query, queryTokens, q, k);
     } else {
       if (queryType.equals(MATCH)) {
-        TermQuery query = new TermQuery(new Term(field, q));
+        List<String> queryTokens = AnalyzerUtils.tokenize(analyzer, q);
+        PhraseQuery.Builder builder = new PhraseQuery.Builder();
+        for (String token: queryTokens) {
+          builder.add(new Term(field, token));
+        }
+        PhraseQuery query = builder.build();
         return search(query, null, q, k);
       } else if (queryType.equals(PREFIX)) {
         PrefixQuery query = new PrefixQuery(new Term(field, q));
@@ -132,10 +150,10 @@ public class KGSearcher implements Closeable {
     searchArgs.arbitraryScoreTieBreak = false;
     searchArgs.hits = k;
 
-    TopDocs rs = new TopDocs(0, new ScoreDoc[]{}, Float.NaN);
+    TopDocs rs = new TopDocs(new TotalHits(0, TotalHits.Relation.EQUAL_TO), new ScoreDoc[]{});
     RerankerContext context;
     rs = searcher.search(query, isRerank ?
-      searchArgs.rerankcutoff : k, BREAK_SCORE_TIES_BY_DOCID, true, true);
+      searchArgs.rerankcutoff : k, BREAK_SCORE_TIES_BY_DOCID, true);
     
     context = new RerankerContext<>(searcher, null, query, null, queryString, queryTokens, null, searchArgs);
 
@@ -149,7 +167,13 @@ public class KGSearcher implements Closeable {
       String content = field == null ? null : field.stringValue();
       IndexableField uriField = doc.getField(FIELD_URI);
       String uri = uriField == null ? null : uriField.stringValue();
-      results[i] = new Result(docid, hits.ids[i], uri, hits.scores[i], content);
+      IndexableField priorField = doc.getField(FIELD_PRIOR);
+      String prior = priorField == null ? null : priorField.stringValue();
+      IndexableField aliasField = doc.getField(FIELD_ALIAS);
+      String alias = aliasField == null ? null : aliasField.stringValue();
+
+
+      results[i] = new Result(docid, hits.ids[i], uri, hits.scores[i], content, prior, alias);
     }
     return results;
   }

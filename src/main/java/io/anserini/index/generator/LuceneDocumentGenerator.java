@@ -53,7 +53,8 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
 
   protected IndexCollection.Counters counters;
   protected IndexCollection.Args args;
-  protected List<String> stringFieldsList;
+  protected List<String> stringFieldsList = Arrays.asList();
+  protected List<String> notAnalyzedFieldsList = Arrays.asList();
 
   /**
    * Default constructor.
@@ -101,6 +102,11 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
     this.args = args;
     if (args.stringFields != null) {
       this.stringFieldsList = Arrays.asList(args.stringFields.split(","));
+    } else {
+      
+    }
+    if (args.notAnalyzedFields != null) {
+      this.notAnalyzedFieldsList = Arrays.asList(args.notAnalyzedFields.split(","));
     }
   }
 
@@ -161,9 +167,9 @@ public class LuceneDocumentGenerator<T extends SourceDocument> {
     if (src instanceof MultifieldSourceDocument) {
       ((MultifieldSourceDocument) src).fields().forEach((k, v) -> {
         if (stringFieldsList.contains(k)) {
-          
           document.add(new StringField(k, v, Field.Store.YES));
-
+        } else if (notAnalyzedFieldsList.contains(k)) {
+          document.add(new StoredField(k, v));
         } else {
           FieldType type = new FieldType();
 
