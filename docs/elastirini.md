@@ -59,21 +59,83 @@ Once we have a local instance of Elasticsearch up and running, we can index usin
 First, let us create the index in Elasticsearch.
 
 ```
-curl --user elastic:changeme -XPUT "localhost:9200/yourindexname"
+curl --user elastic:changeme -XPUT -H 'Content-Type: application/json' 'localhost:9200/<index_name>' \
+    -d '{
+          "mappings":{
+            "dynamic_templates":[
+              {
+                "all_text":{
+                  "match_mapping_type":"string",
+                  "mapping":{
+                    "type":"text",
+                    "analyzer":"english"
+                  }
+                }
+              }
+            ],
+            "properties":{
+              "id":{
+                "type":"keyword"
+              },
+              "id_long":{
+                "type":"keyword"
+              },
+              "contents":{
+                "type":"text",
+                "store": false,
+                "index": true,
+                "analyzer": "english"
+              },
+              "raw":{
+                "type":"text",
+                "store": true,
+                "index": false
+              },
+              "epoch":{
+                "type":"date",
+                "format":"epoch_second"
+              },
+              "published_date":{
+                "type":"date",
+                "format":"epoch_millis"
+              }
+            }
+          },
+          "settings":{
+            "index":{
+              "refresh_interval":"60s",
+              "similarity":{
+                "default":{
+                  "type":"BM25",
+                  "k1":"0.9",
+                  "b":"0.4"
+                }
+              }
+            }
+          }
+        }'
 ```
 
 Here, the username and password are those defaulted by `docker-elk`. You can change these if you like.
 
-You can further specify the settings associated with this index. For example, if you would like to change `index.refresh_interval` from the default 1 second to 60 seconds:
-
-```
-curl --user elastic:changeme -XPUT -H 'Content-Type: application/json' 'localhost:9200/yourindexname/_settings' -d '{ "index": { "refresh_interval": "60s"}}'
-```
-
 Now, we can start indexing through Elastirini. Here, instead of passing in `-index` (to index with Lucene directly) or `-solr` (to index with Solr), we pass in `-es`. For example, to index [robust04](https://github.com/castorini/anserini/blob/master/docs/regressions-robust04.md), we could run:
 
 ```
-sh target/appassembler/bin/IndexCollection -collection TrecCollection -generator JsoupGenerator -es -es.index yourindexname -threads 16 -input /absolute/path/to/disk45 -storePositions -storeDocvectors -storeRawDocs
+sh target/appassembler/bin/IndexCollection -collection TrecCollection -generator JsoupGenerator -es -es.index robust04 -threads 16 -input /absolute/path/to/disk45 -storePositions -storeDocvectors -storeRawDocs
 ```
 
 There are also other `-es` parameters that you can specify as you see fit.
+
+You can also run the following command to replicate Anserini BM25 retrieval:
+
+```
+sh target/appassembler/bin/SearchElastic -topicreader Trec -es.index robust04 \
+  -topics src/main/resources/topics-and-qrels/topics.robust04.301-450.601-700.txt \
+  -output run.es.robust04.bm25.topics.robust04.301-450.601-700.txt
+```
+
+Evaluation can be performed using `trec_eval`:
+
+```
+eval/trec_eval.9.0.4/trec_eval -m map -m P.30 src/main/resources/topics-and-qrels/qrels.robust2004.txt run.es.robust04.bm25.topics.robust04.301-450.601-700.txt
+```
