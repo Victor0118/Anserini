@@ -9,7 +9,7 @@ before_install:
 install: true
 dist: trusty
 jdk:
-  - oraclejdk11
+  - oraclejdk8
 script:
   - mvn clean package appassembler:assemble
   - find target/appassembler/bin/ -type f -exec sed -i 's/-Xmx.*G/-Xmx2G/g' {} \;

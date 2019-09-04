@@ -30,6 +30,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.DirectoryReader;
@@ -127,6 +129,16 @@ public class SimpleSearcher implements Closeable {
      this.searchtweets = flag;
      this.analyzer = flag? new TweetAnalyzer(true) : new EnglishAnalyzer();
   }
+
+  public void setSegmented(boolean flag) {
+     this.analyzer = flag? new WhitespaceAnalyzer() : new EnglishAnalyzer();
+  }
+
+  public void setSearchChinese(boolean flag) {
+     this.searchtweets = false;
+     this.analyzer = flag? new CJKAnalyzer() : new EnglishAnalyzer();
+  }
+
 
   public void setRM3Reranker() {
     setRM3Reranker(10, 10, 0.5f, false);
@@ -285,7 +297,7 @@ public class SimpleSearcher implements Closeable {
     Result[] results = new Result[hits.ids.length];
     for (int i = 0; i < hits.ids.length; i++) {
       Document doc = hits.documents[i];
-      String docid = doc.getField(LuceneDocumentGenerator.FIELD_ID).stringValue();
+      String docid = doc.getField(TweetGenerator.FIELD_ID).stringValue();
       IndexableField field = doc.getField(LuceneDocumentGenerator.FIELD_RAW);
       String content = field == null ? null : field.stringValue();
 
